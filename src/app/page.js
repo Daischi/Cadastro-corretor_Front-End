@@ -14,11 +14,8 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-gray-100 flex justify-center items-center">
-      <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
-        <h1 className="text-2xl font-bold text-center mb-4">
-          Cadastro de Corretores
-        </h1>
+    <div>
+      <div>
         <CorretorForm setCorretores={setCorretores} />
 
         <ul className="mt-4 bg-gray-200 p-4 rounded-lg shadow">
