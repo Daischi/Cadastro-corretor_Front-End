@@ -1,6 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Pencil, Trash2, User, Users } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  User,
+  Users,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 
 export default function CorretorForm() {
   const [cpf, setCpf] = useState("");
@@ -9,6 +16,7 @@ export default function CorretorForm() {
   const [corretores, setCorretores] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formMode, setFormMode] = useState("create"); // "create" or "edit"
 
   useEffect(() => {
@@ -16,15 +24,26 @@ export default function CorretorForm() {
   }, []);
 
   const fetchCorretores = () => {
+    console.log("Iniciando carregamento de corretores...");
     setIsLoading(true);
+    setError(null);
+
     fetch("http://localhost:8000/endpoints/listar.php")
-      .then((res) => res.json())
+      .then((res) => {
+        console.log("Resposta recebida:", res.status);
+        if (!res.ok) {
+          throw new Error(`Erro HTTP: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        setCorretores(data);
+        console.log("Dados recebidos:", data);
+        setCorretores(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
       .catch((error) => {
         console.error("Erro ao buscar corretores:", error);
+        setError(`Não foi possível conectar ao servidor: ${error.message}`);
         setIsLoading(false);
       });
   };
@@ -32,44 +51,49 @@ export default function CorretorForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    if (formMode === "create") {
-      // Create new agent
-      const response = await fetch(
-        "http://localhost:8000/endpoints/cadastrar.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, cpf, creci }),
+    try {
+      if (formMode === "create") {
+        // Create new agent
+        const response = await fetch(
+          "http://localhost:8000/endpoints/cadastrar.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, cpf, creci }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
         }
-      );
 
-      if (response.ok) {
         resetForm();
         fetchCorretores();
       } else {
-        alert("Erro ao cadastrar corretor.");
-        setIsLoading(false);
-      }
-    } else {
-      // Update existing agent
-      const response = await fetch(
-        "http://localhost:8000/endpoints/atualizar.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: editingId, name, cpf, creci }),
-        }
-      );
+        // Update existing agent
+        const response = await fetch(
+          "http://localhost:8000/endpoints/atualizar.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: editingId, name, cpf, creci }),
+          }
+        );
 
-      if (response.ok) {
+        if (!response.ok) {
+          throw new Error(`Erro HTTP: ${response.status}`);
+        }
+
         resetForm();
         setFormMode("create");
         fetchCorretores();
-      } else {
-        alert("Erro ao atualizar corretor.");
-        setIsLoading(false);
       }
+    } catch (error) {
+      console.error("Erro na operação:", error);
+      setError(`Falha na operação: ${error.message}`);
+      setIsLoading(false);
     }
   };
 
@@ -85,19 +109,26 @@ export default function CorretorForm() {
     if (!confirm("Tem certeza que deseja excluir este corretor?")) return;
 
     setIsLoading(true);
-    const response = await fetch(
-      "http://localhost:8000/endpoints/excluir.php",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      }
-    );
+    setError(null);
 
-    if (response.ok) {
+    try {
+      const response = await fetch(
+        "http://localhost:8000/endpoints/excluir.php",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
       fetchCorretores();
-    } else {
-      alert("Erro ao excluir corretor.");
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+      setError(`Falha ao excluir: ${error.message}`);
       setIsLoading(false);
     }
   };
@@ -144,6 +175,36 @@ export default function CorretorForm() {
           Gerencie seus corretores de forma simples e eficiente
         </p>
 
+        {/* Error message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+            <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Erro de conexão</p>
+              <p className="text-sm">{error}</p>
+              <div className="mt-2">
+                <button
+                  onClick={fetchCorretores}
+                  className="text-sm bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-md inline-flex items-center"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" /> Tentar novamente
+                </button>
+                <div className="mt-2 text-xs text-red-600">
+                  <p>Verifique se:</p>
+                  <ul className="list-disc pl-5 space-y-1 mt-1">
+                    <li>
+                      O servidor PHP está rodando em http://localhost:8000
+                    </li>
+                    <li>O arquivo listar.php existe no diretório /endpoints</li>
+                    <li>Não há erros no código PHP</li>
+                    <li>O PHP está configurado para permitir CORS</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Form Card */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
@@ -173,7 +234,7 @@ export default function CorretorForm() {
                     value={cpf}
                     onChange={handleCpfChange}
                     placeholder="000.000.000-00"
-                    className=" w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     maxLength="14"
                     required
                   />
@@ -229,11 +290,32 @@ export default function CorretorForm() {
               <h2 className="text-lg font-medium text-gray-800">
                 Corretores Cadastrados
               </h2>
+              <button
+                onClick={fetchCorretores}
+                className="ml-auto text-emerald-600 hover:text-emerald-800"
+                title="Atualizar lista"
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+              </button>
             </div>
 
-            {isLoading && corretores.length === 0 ? (
+            {isLoading ? (
               <div className="p-6 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-2"></div>
                 <p className="text-gray-500">Carregando corretores...</p>
+              </div>
+            ) : error ? (
+              <div className="p-6 text-center text-gray-500">
+                <p>Não foi possível carregar os dados.</p>
+                <button
+                  onClick={fetchCorretores}
+                  className="mt-2 text-emerald-600 hover:text-emerald-800 text-sm inline-flex items-center"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" /> Tentar novamente
+                </button>
               </div>
             ) : corretores.length > 0 ? (
               <div className="overflow-x-auto">
