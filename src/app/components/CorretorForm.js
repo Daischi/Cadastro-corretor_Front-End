@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import React from "react";
+
 import {
   Pencil,
   Trash2,
@@ -7,6 +9,8 @@ import {
   Users,
   RefreshCw,
   AlertCircle,
+  Check,
+  X,
 } from "lucide-react";
 
 export default function CorretorForm() {
@@ -18,6 +22,12 @@ export default function CorretorForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formMode, setFormMode] = useState("create"); // "create" or "edit"
+  const [editingRow, setEditingRow] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    cpf: "",
+    creci: "",
+  });
 
   useEffect(() => {
     fetchCorretores();
@@ -91,6 +101,64 @@ export default function CorretorForm() {
     setFormMode("edit");
   };
 
+  const handleInlineEdit = (corretor) => {
+    setEditingRow(corretor.id);
+    setEditFormData({
+      name: corretor.name,
+      cpf: corretor.cpf,
+      creci: corretor.creci,
+    });
+  };
+
+  const handleInlineEditChange = (e, field) => {
+    let value = e.target.value;
+
+    // Formatar CPF se o campo for CPF
+    if (field === "cpf") {
+      value = formatCpf(value);
+    }
+
+    setEditFormData({
+      ...editFormData,
+      [field]: value,
+    });
+  };
+
+  const handleInlineEditSave = async (id) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8000/endpoints/editar.php",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: id,
+            name: editFormData.name,
+            cpf: editFormData.cpf,
+            creci: editFormData.creci,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      setEditingRow(null);
+      fetchCorretores();
+    } catch (error) {
+      setError(`Falha ao salvar: ${error.message}`);
+      setIsLoading(false);
+    }
+  };
+
+  const handleInlineEditCancel = () => {
+    setEditingRow(null);
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Tem certeza que deseja excluir este corretor?")) return;
 
@@ -149,7 +217,7 @@ export default function CorretorForm() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-bold text-center text-emerald-500 mb-2">
           Cadastro de Corretores
         </h1>
@@ -187,9 +255,9 @@ export default function CorretorForm() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Form Card */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-1">
             <div className="p-5 bg-emerald-50 border-b border-gray-100 flex items-center">
               <User className="text-emerald-500 mr-2" size={20} />
               <h2 className="text-lg font-medium text-gray-800">
@@ -266,7 +334,7 @@ export default function CorretorForm() {
           </div>
 
           {/* Table Card */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-2">
             <div className="p-5 bg-emerald-50 border-b border-gray-100 flex items-center">
               <Users className="text-emerald-500 mr-2" size={20} />
               <h2 className="text-lg font-medium text-gray-800">
@@ -284,12 +352,12 @@ export default function CorretorForm() {
               </button>
             </div>
 
-            {isLoading ? (
+            {isLoading && !corretores.length ? (
               <div className="p-6 text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mb-2"></div>
                 <p className="text-gray-500">Carregando corretores...</p>
               </div>
-            ) : error ? (
+            ) : error && !corretores.length ? (
               <div className="p-6 text-center text-gray-500">
                 <p>Não foi possível carregar os dados.</p>
                 <button
@@ -304,6 +372,9 @@ export default function CorretorForm() {
                 <table className="w-full">
                   <thead className="bg-gray-50 text-left">
                     <tr>
+                      <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">
+                        Foto
+                      </th>
                       <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">
                         ID
                       </th>
@@ -323,38 +394,117 @@ export default function CorretorForm() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {corretores.map((corretor) => (
-                      <tr key={corretor.id}>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {corretor.id}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {corretor.cpf}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {corretor.name}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {corretor.creci}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEdit(corretor)}
-                              className="text-emerald-500 hover:text-emerald-600"
-                              title="Editar"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(corretor.id)}
-                              className="text-red-500 hover:text-red-600"
-                              title="Excluir"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                      <React.Fragment key={corretor.id}>
+                        <tr
+                          className={
+                            editingRow === corretor.id ? "bg-emerald-50" : ""
+                          }
+                        >
+                          <td className="px-6 py-4 text-sm">
+                            <div className="flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-medium border border-emerald-200">
+                                {corretor.name
+                                  ? corretor.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .substring(0, 2)
+                                      .toUpperCase()
+                                  : "??"}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {corretor.id}
+                          </td>
+
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {editingRow === corretor.id ? (
+                              <input
+                                type="text"
+                                value={editFormData.cpf}
+                                onChange={(e) =>
+                                  handleInlineEditChange(e, "cpf")
+                                }
+                                className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                maxLength="14"
+                              />
+                            ) : (
+                              corretor.cpf
+                            )}
+                          </td>
+
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {editingRow === corretor.id ? (
+                              <input
+                                type="text"
+                                value={editFormData.name}
+                                onChange={(e) =>
+                                  handleInlineEditChange(e, "name")
+                                }
+                                className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                              />
+                            ) : (
+                              corretor.name
+                            )}
+                          </td>
+
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {editingRow === corretor.id ? (
+                              <input
+                                type="text"
+                                value={editFormData.creci}
+                                onChange={(e) =>
+                                  handleInlineEditChange(e, "creci")
+                                }
+                                className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                              />
+                            ) : (
+                              corretor.creci
+                            )}
+                          </td>
+
+                          <td className="px-6 py-4 text-sm">
+                            {editingRow === corretor.id ? (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() =>
+                                    handleInlineEditSave(corretor.id)
+                                  }
+                                  className="text-emerald-500 hover:text-emerald-600"
+                                  title="Salvar"
+                                >
+                                  <Check size={18} />
+                                </button>
+                                <button
+                                  onClick={handleInlineEditCancel}
+                                  className="text-red-500 hover:text-red-600"
+                                  title="Cancelar"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleInlineEdit(corretor)}
+                                  className="text-emerald-500 hover:text-emerald-600"
+                                  title="Editar"
+                                >
+                                  <Pencil size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(corretor.id)}
+                                  className="text-red-500 hover:text-red-600"
+                                  title="Excluir"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
