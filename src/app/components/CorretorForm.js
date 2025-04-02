@@ -24,25 +24,21 @@ export default function CorretorForm() {
   }, []);
 
   const fetchCorretores = () => {
-    console.log("Iniciando carregamento de corretores...");
     setIsLoading(true);
     setError(null);
 
     fetch("http://localhost:8000/endpoints/listar.php")
       .then((res) => {
-        console.log("Resposta recebida:", res.status);
         if (!res.ok) {
           throw new Error(`Erro HTTP: ${res.status}`);
         }
         return res.json();
       })
       .then((data) => {
-        console.log("Dados recebidos:", data);
         setCorretores(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
       .catch((error) => {
-        console.error("Erro ao buscar corretores:", error);
         setError(`Não foi possível conectar ao servidor: ${error.message}`);
         setIsLoading(false);
       });
@@ -54,9 +50,10 @@ export default function CorretorForm() {
     setError(null);
 
     try {
+      let response;
       if (formMode === "create") {
-        // Create new agent
-        const response = await fetch(
+        // Criar novo corretor
+        response = await fetch(
           "http://localhost:8000/endpoints/cadastrar.php",
           {
             method: "POST",
@@ -64,34 +61,23 @@ export default function CorretorForm() {
             body: JSON.stringify({ name, cpf, creci }),
           }
         );
-
-        if (!response.ok) {
-          throw new Error(`Erro HTTP: ${response.status}`);
-        }
-
-        resetForm();
-        fetchCorretores();
       } else {
-        // Update existing agent
-        const response = await fetch(
-          "http://localhost:8000/endpoints/atualizar.php",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: editingId, name, cpf, creci }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Erro HTTP: ${response.status}`);
-        }
-
-        resetForm();
-        setFormMode("create");
-        fetchCorretores();
+        // Atualizar corretor existente (CORREÇÃO: Usando PUT corretamente)
+        response = await fetch("http://localhost:8000/endpoints/editar.php", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingId, name, cpf, creci }),
+        });
       }
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+
+      resetForm();
+      setFormMode("create");
+      fetchCorretores();
     } catch (error) {
-      console.error("Erro na operação:", error);
       setError(`Falha na operação: ${error.message}`);
       setIsLoading(false);
     }
@@ -115,7 +101,7 @@ export default function CorretorForm() {
       const response = await fetch(
         "http://localhost:8000/endpoints/excluir.php",
         {
-          method: "POST",
+          method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id }),
         }
@@ -127,7 +113,6 @@ export default function CorretorForm() {
 
       fetchCorretores();
     } catch (error) {
-      console.error("Erro ao excluir:", error);
       setError(`Falha ao excluir: ${error.message}`);
       setIsLoading(false);
     }
@@ -146,10 +131,8 @@ export default function CorretorForm() {
   };
 
   const formatCpf = (value) => {
-    // Remove non-digits
     const digits = value.replace(/\D/g, "");
 
-    // Apply CPF format: XXX.XXX.XXX-XX
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
     if (digits.length <= 9)
@@ -161,8 +144,7 @@ export default function CorretorForm() {
   };
 
   const handleCpfChange = (e) => {
-    const formattedCpf = formatCpf(e.target.value);
-    setCpf(formattedCpf);
+    setCpf(formatCpf(e.target.value));
   };
 
   return (
@@ -227,21 +209,6 @@ export default function CorretorForm() {
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label className="block text-gray-700 text-sm font-medium mb-2">
-                    CPF
-                  </label>
-                  <input
-                    type="text"
-                    value={cpf}
-                    onChange={handleCpfChange}
-                    placeholder="000.000.000-00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    maxLength="14"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
                     Nome
                   </label>
                   <input
@@ -249,7 +216,22 @@ export default function CorretorForm() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Nome completo"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border text-gray-900 border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    CPF
+                  </label>
+                  <input
+                    type="text"
+                    value={cpf}
+                    onChange={handleCpfChange}
+                    placeholder="000.000.000-00"
+                    className="w-full px-3 py-2 border text-gray-900 border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    maxLength="14"
                     required
                   />
                 </div>
@@ -263,14 +245,14 @@ export default function CorretorForm() {
                     value={creci}
                     onChange={(e) => setCreci(e.target.value)}
                     placeholder="Número do CRECI"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-md transition-colors cursor-pointer"
                   disabled={isLoading}
                 >
                   {isLoading
