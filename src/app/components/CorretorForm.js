@@ -173,7 +173,7 @@ export default function CorretorForm() {
                     value={cpf}
                     onChange={handleCpfChange}
                     placeholder="000.000.000-00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className=" w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     maxLength="14"
                     required
                   />

@@ -17,14 +17,6 @@ export default function Home() {
     <div>
       <div>
         <CorretorForm setCorretores={setCorretores} />
-
-        <ul className="mt-4 bg-gray-200 p-4 rounded-lg shadow">
-          {corretores.map((corretor) => (
-            <li key={corretor.id} className="border-b py-2">
-              {corretor.nome} - {corretor.cpf} - CRECI: {corretor.creci}
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );
