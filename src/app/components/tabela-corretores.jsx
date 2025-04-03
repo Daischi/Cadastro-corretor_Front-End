@@ -18,7 +18,7 @@ export default function TabelaCorretores({
     onDelete,
 }) {
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-2 ">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-2 border-t-emerald-500 border-t-4 ">
             <div className="p-5 bg-emerald-50 border-b border-gray-100 flex items-center">
                 <Users className="text-emerald-500 mr-2" size={20} />
                 <h2 className="text-lg font-medium text-gray-800">Corretores Cadastrados</h2>

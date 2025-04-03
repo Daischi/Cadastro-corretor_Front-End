@@ -15,7 +15,7 @@ export default function FormularioCorretor({
     onCancelEdit,
 }) {
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-1 border-t-emerald-900">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-1 border-t-emerald-500 border-t-4">
             <div className="p-5 bg-emerald-50 border-b border-gray-100 flex items-center">
                 <UserPlus className="text-emerald-500 mr-2" size={20} />
                 <h2 className="text-lg font-medium text-gray-800">
@@ -69,7 +69,7 @@ export default function FormularioCorretor({
 
                     <button
                         type="submit"
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2 px-4 rounded-md transition-colors cursor-pointer"
+                        className="w-full hover:scale-105 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-md  cursor-pointer hover:bg-primary/90 h-10 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 transition-all duration-300"
                         disabled={isLoading}
                     >
                         {isLoading ? "Processando..." : formMode === "create" ? "Cadastrar" : "Salvar"}
