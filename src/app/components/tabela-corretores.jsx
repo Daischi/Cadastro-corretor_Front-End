@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { Users, RefreshCw, Pencil, Trash2, X, Save } from "lucide-react"
 import AvatarCorretor from "./avatar-corretor"
 
@@ -17,6 +17,129 @@ export default function TabelaCorretores({
     onInlineEditCancel,
     onDelete,
 }) {
+    const [isCpfValid, setIsCpfValid] = useState(true)
+    const [showCpfError, setShowCpfError] = useState(false)
+
+    // Add these state variables after the existing ones
+    const [isNameValid, setIsNameValid] = useState(true)
+    const [isCretiValid, setIsCretiValid] = useState(true)
+    const [showNameError, setShowNameError] = useState(false)
+    const [showCretiError, setShowCretiError] = useState(false)
+
+    // Validate CPF length whenever editFormData.cpf changes
+    useEffect(() => {
+        if (editingRow) {
+            const rawCpf = editFormData.cpf?.replace(/\D/g, "") || ""
+            const isValid = rawCpf.length === 11
+            setIsCpfValid(isValid)
+
+            // Only show error if user has started typing a CPF
+            if (rawCpf.length > 0) {
+                setShowCpfError(rawCpf.length !== 11)
+            } else {
+                setShowCpfError(false)
+            }
+        } else {
+            // Reset validation state when not editing
+            setIsCpfValid(true)
+            setShowCpfError(false)
+        }
+    }, [editFormData?.cpf, editingRow])
+
+    // Add this useEffect to validate name
+    useEffect(() => {
+        if (editingRow && editFormData?.name) {
+            const isValid = editFormData.name.length >= 2
+            setIsNameValid(isValid)
+            setShowNameError(editFormData.name.length > 0 && !isValid)
+        } else {
+            setIsNameValid(true)
+            setShowNameError(false)
+        }
+    }, [editFormData?.name, editingRow])
+
+    // Add this useEffect to validate CRECI
+    useEffect(() => {
+        if (editingRow && editFormData?.creci) {
+            const isValid = editFormData.creci.length >= 2
+            setIsCretiValid(isValid)
+            setShowCretiError(editFormData.creci.length > 0 && !isValid)
+        } else {
+            setIsCretiValid(true)
+            setShowCretiError(false)
+        }
+    }, [editFormData?.creci, editingRow])
+
+    // Format CPF as user types (XXX.XXX.XXX-XX)
+    const handleCpfChange = (e) => {
+        let value = e.target.value
+
+        // Remove all non-numeric characters
+        value = value.replace(/\D/g, "")
+
+        // Apply CPF formatting
+        if (value.length <= 11) {
+            // Format with dots and dash
+            if (value.length > 9) {
+                value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, "$1.$2.$3-$4")
+            } else if (value.length > 6) {
+                value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3")
+            } else if (value.length > 3) {
+                value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2")
+            }
+        }
+
+        // Call the original onChange handler with the formatted value and field name
+        onInlineEditChange(
+            {
+                target: {
+                    value: value,
+                    // Add a raw value property that contains only numbers
+                    rawValue: value.replace(/\D/g, ""),
+                },
+            },
+            "cpf",
+        )
+    }
+
+    // Update the handleSave function to check all validations
+    const handleSave = (id) => {
+        // Check if CPF is valid before saving
+        const rawCpf = editFormData.cpf.replace(/\D/g, "")
+        let hasError = false
+
+        if (rawCpf.length !== 11) {
+            setShowCpfError(true)
+            hasError = true
+        }
+
+        if (editFormData.name.length < 2) {
+            setShowNameError(true)
+            hasError = true
+        }
+
+        if (editFormData.creci.length < 2) {
+            setShowCretiError(true)
+            hasError = true
+        }
+
+        if (hasError) {
+            return
+        }
+
+        // Create a copy of the form data with CPF stripped of formatting
+        const formData = {
+            ...editFormData,
+            cpf: rawCpf, // Remove dots and dash
+        }
+
+        // Call the original onInlineEditSave with the id and modified data
+        onInlineEditSave(id, formData)
+    }
+
+    // Update the isFormValid variable
+    const isFormValid = editFormData?.name && isNameValid && isCpfValid && editFormData?.creci && isCretiValid
+
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 md:col-span-2 border-t-emerald-500 border-t-4 ">
             <div className="p-5 bg-emerald-50 border-b border-gray-100 flex items-center">
@@ -71,26 +194,42 @@ export default function TabelaCorretores({
 
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {editingRow === corretor.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editFormData.cpf}
-                                                    onChange={(e) => onInlineEditChange(e, "cpf")}
-                                                    className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                    maxLength="14"
-                                                />
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.cpf}
+                                                        onChange={handleCpfChange}
+                                                        className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 ${showCpfError
+                                                                ? "border-red-500 focus:ring-red-500"
+                                                                : "border-emerald-300 focus:ring-emerald-500"
+                                                            }`}
+                                                        maxLength="14"
+                                                    />
+                                                    {showCpfError && <p className="mt-1 text-xs text-red-500">CPF deve conter 11 dígitos</p>}
+                                                </div>
                                             ) : (
-                                                corretor.cpf
+                                                // Format CPF for display
+                                                corretor.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4")
                                             )}
                                         </td>
 
                                         <td className="px-6 py-4 text-sm text-gray-900">
                                             {editingRow === corretor.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editFormData.name}
-                                                    onChange={(e) => onInlineEditChange(e, "name")}
-                                                    className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                />
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.name}
+                                                        onChange={(e) => onInlineEditChange(e, "name")}
+                                                        className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 ${showNameError
+                                                                ? "border-red-500 focus:ring-red-500"
+                                                                : "border-emerald-300 focus:ring-emerald-500"
+                                                            }`}
+                                                        maxLength={100}
+                                                    />
+                                                    {showNameError && (
+                                                        <p className="mt-1 text-xs text-red-500">Nome deve ter pelo menos 2 caracteres</p>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 corretor.name
                                             )}
@@ -98,12 +237,21 @@ export default function TabelaCorretores({
 
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {editingRow === corretor.id ? (
-                                                <input
-                                                    type="text"
-                                                    value={editFormData.creci}
-                                                    onChange={(e) => onInlineEditChange(e, "creci")}
-                                                    className="w-full px-2 py-1 border border-emerald-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                                />
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.creci}
+                                                        onChange={(e) => onInlineEditChange(e, "creci")}
+                                                        className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 ${showCretiError
+                                                                ? "border-red-500 focus:ring-red-500"
+                                                                : "border-emerald-300 focus:ring-emerald-500"
+                                                            }`}
+                                                        maxLength={4}
+                                                    />
+                                                    {showCretiError && (
+                                                        <p className="mt-1 text-xs text-red-500">CRECI deve ter pelo menos 2 caracteres</p>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 corretor.creci
                                             )}
@@ -113,9 +261,13 @@ export default function TabelaCorretores({
                                             {editingRow === corretor.id ? (
                                                 <div className="flex space-x-2">
                                                     <button
-                                                        onClick={() => onInlineEditSave(corretor.id)}
-                                                        className="text-emerald-500 hover:text-emerald-600  px-3 py-2 cursor-pointer border-emerald-400 border-[1.5px] rounded-md hover:scale-115 transition-transform duration-300 hover:bg-teal-100"
+                                                        onClick={() => handleSave(corretor.id)}
+                                                        className={`px-3 py-2 cursor-pointer border-[1.5px] rounded-md transition-transform duration-300 ${isFormValid
+                                                                ? "text-emerald-500 hover:text-emerald-600 border-emerald-400 hover:bg-teal-100 hover:scale-115"
+                                                                : "text-gray-400 border-gray-300 cursor-not-allowed"
+                                                            }`}
                                                         title="Salvar"
+                                                        disabled={!isFormValid}
                                                     >
                                                         <Save size={18} />
                                                     </button>
