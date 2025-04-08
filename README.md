@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 📋 Cadastro de Corretores
 
-## Getting Started
+Este projeto é uma aplicação web para o cadastro e gerenciamento de corretores. Ele foi desenvolvido com foco em praticar integração entre front-end e back-end, utilizando tecnologias modernas e amplamente usadas no mercado.
 
-First, run the development server:
+## 🛠️ Tecnologias Utilizadas
 
+### Front-end
+- [Next.js](https://nextjs.org/)
+- [TypeScript](https://www.typescriptlang.org/) (opcional, se estiver usando)
+- [Tailwind CSS](https://tailwindcss.com/) (caso tenha usado)
+- [Axios](https://axios-http.com/) para requisições HTTP
+
+### Back-end
+- PHP (rodando via XAMPP)
+- MySQL (banco de dados)
+- XAMPP (ambiente local para Apache + MySQL)
+
+---
+
+## ⚙️ Funcionalidades
+
+- Cadastro de novos corretores
+- Listagem de todos os corretores cadastrados
+- Edição dos dados do corretor
+- Exclusão de cadastros
+- Comunicação entre o front-end (Next.js) e o back-end (PHP + MySQL) via API
+
+---
+
+## 🚀 Como Rodar o Projeto
+
+### Pré-requisitos
+
+- Node.js
+- XAMPP instalado e rodando (Apache e MySQL)
+- Navegador (Google Chrome ou outro)
+
+### 1. Clonar o repositório
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+git clone https://github.com/seu-usuario/seu-repositorio.git
+cd cadastro-corretores
